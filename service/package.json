@@ -1,0 +1,36 @@
+{
+  "name": "cloudstate-qanda",
+  "version": "1.0.0",
+  "description": "CloudState Conference Presentation Question and Answer example stateful service",
+  "keywords": [
+    "serverless",
+    "cloudstate",
+    "crdt"
+  ],
+  "homepage": "https://github.com/jroper/cloudstate-qanda",
+  "bugs": {
+    "url": "https://github.com/jroper/cloudstate-qanda/issues"
+  },
+  "license": "Apache-2.0",
+  "author": {
+    "name": "James Roper",
+    "email": "jroper2@gmail.com",
+    "url": "https://jazzy.id.au"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jroper/cloudstate-qanda",
+    "directory": "friends"
+  },
+  "dependencies": {
+    "cloudstate": "0.0.2"
+  },
+  "scripts": {
+    "prestart": "compile-descriptor qanda.proto",
+    "start": "node qanda.js",
+    "start-no-prestart": "node qanda.js",
+    "dockerbuild": "docker build -t ${DOCKER_PUBLISH_TO:-jamesroper}/cloudstate-qanda:latest .",
+    "dockerpush": "docker push ${DOCKER_PUBLISH_TO:-jamesroper}/cloudstate-qanda:latest",
+    "dockerbuildpush": "npm run dockerbuild && npm run dockerpush"
+  }
+}

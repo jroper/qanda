@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Questions and Answers</title>
+    <script type="text/javascript">
+
+      let eventSource = null;
+
+      const presentations = {
+        cloudstate: {
+          title: "Cloudstate - Towards Stateful Serverless",
+          speakers: "Jonas Bonér and James Roper"
+        },
+        dapr: {
+          title: "It’s a Polyglot World of Stateless Functions and Stateful Actors",
+          speakers: "Yaron Schneider & Aman Bhardwaj"
+        },
+        "cncf-updates": {
+          title: "CNCF Updates",
+          speakers: "Cheryl Hung"
+        },
+        "love-kubernetes": {
+          title: "How to Love K8s and Not Wreck the Planet",
+          speakers: "Holly Cummins"
+        }
+      };
+
+      function displayScreen(id) {
+        const screens = document.getElementsByClassName("screen");
+        for (let i = 0; i < screens.length; i++) {
+          if (screens[i].id === id) {
+            screens[i].classList.remove("hidden");
+          } else if (!screens[i].classList.contains("hidden")) {
+            screens[i].classList.add("hidden");
+          }
+        }
+      }
+
+      function vote(presentationId, question) {
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", function() {
+          if (req.status !== 200) {
+            console.log("Unexpected status code on question ask: " + req.status);
+            console.log(req.responseText);
+          }
+        });
+        req.open("POST", "/api/qanda/" + presentationId);
+        req.setRequestHeader("Content-Type", "application/json");
+        req.send(JSON.stringify({
+          "question": question
+        }));
+      }
+
+      function renderQuestions(presentationId, questions) {
+        // First, put questions in a list, and sort
+        const questionsList = [];
+        for (const key of Object.keys(questions)) {
+          questionsList.push({
+            question: key,
+            votes: questions[key],
+          })
+        }
+        questionsList.sort((a, b) => b.votes - a.votes);
+
+        console.log("Questions list: " + JSON.stringify(questionsList));
+        // Get all existing questions
+        const questionsUl = document.getElementById("questions");
+        const questionElements = questionsUl.getElementsByTagName("li");
+        for (const idx in questionsList) {
+          if (idx < questionElements.length) {
+            questionElements[idx].getElementsByClassName("question-text")[0].innerText = questionsList[idx].question;
+            questionElements[idx].getElementsByClassName("votes")[0].innerText = questionsList[idx].votes;
+            questionElements[idx].getElementsByClassName("vote-button")[0].setAttribute("data-question", questionsList[idx].question);
+          } else {
+            const li = document.createElement("li");
+            li.classList.add("question");
+            const questionSpan = document.createElement("span");
+            questionSpan.classList.add("question-text");
+            questionSpan.innerText = questionsList[idx].question;
+            const votesSpan = document.createElement("span");
+            votesSpan.classList.add("votes");
+            votesSpan.innerText = questionsList[idx].votes;
+            const voteButton = document.createElement("button");
+            voteButton.classList.add("vote-button");
+            voteButton.innerText = "VOTE";
+            voteButton.setAttribute("data-question", questionsList[idx].question);
+            voteButton.onclick = function() {
+              vote(presentationId, voteButton.getAttribute("data-question"));
+            };
+            li.appendChild(questionSpan);
+            li.appendChild(votesSpan);
+            li.appendChild(voteButton);
+            questionsUl.appendChild(li);
+          }
+        }
+      }
+
+      function showPresentation(presentationId) {
+
+        const questions = {};
+
+        eventSource = new EventSource("/api/qanda/" + presentationId);
+        eventSource.onmessage = function(e) {
+          const newQuestions = JSON.parse(e.data).questions;
+          for (const key of Object.keys(newQuestions)) {
+            questions[key] = newQuestions[key];
+          }
+          renderQuestions(presentationId, questions);
+        };
+        eventSource.onerror = function(e) {
+          console.log("Event source error: " + JSON.stringify(e));
+        };
+
+        document.getElementById("presentation-name").innerText =  presentations[presentationId].title;
+        document.getElementById("presentation-speakers").innerText =  presentations[presentationId].speakers;
+        const askQuestionForm = document.getElementById("ask-question-form");
+        askQuestionForm.onsubmit = function() {
+          const questionField = askQuestionForm.elements.namedItem("question");
+          if (questionField.value !== "") {
+            vote(presentationId, questionField.value);
+            questionField.value = "";
+          }
+
+          return false;
+        };
+
+        document.getElementById("presentation-questions-exit").onclick = function() {
+          history.pushState({}, "Questions and Answers", "/");
+          gotoLocation();
+          return false;
+        };
+
+        displayScreen("presentation-questions");
+      }
+
+      function gotoLocation() {
+        // Clean up if necessary
+        if (eventSource !== null) {
+          eventSource.close();
+          eventSource = null;
+        }
+        document.getElementById("questions").innerHTML = "";
+
+        if (document.location.pathname === "/") {
+          displayScreen("select-presentation");
+        } else {
+          showPresentation(document.location.pathname.substr(1));
+        }
+      }
+
+      window.onpopstate = function() {
+        gotoLocation();
+      };
+
+
+      window.onload = function() {
+        const presentationSelectBox = document.getElementById("presentation-select-box");
+        for (const key of Object.keys(presentations)) {
+          const option = document.createElement("option");
+          option.value = key;
+          option.innerText = presentations[key].title;
+          presentationSelectBox.appendChild(option);
+        }
+        presentationSelectBox.onchange = function() {
+          console.log("Switching to " + presentationSelectBox.value);
+          if (presentationSelectBox.value !== "--") {
+            const id = presentationSelectBox.value;
+            history.pushState({}, "Questions and Answers - " + presentations[id].title, "/" + id);
+            showPresentation(id);
+            presentationSelectBox.value = "--";
+          }
+        };
+        gotoLocation();
+      };
+
+    </script>
+
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+      }
+      .hidden {
+        display: none;
+      }
+      h1 {
+        background: linear-gradient(90deg, rgb(255, 62, 73) 0%, rgb(46, 12, 244) 100%);
+        color: white;
+        width: 100%;
+        height: 30px;
+        font-size: 18pt;
+        margin: 0;
+        padding: 30px;
+      }
+      .content {
+        margin: 30px;
+      }
+      input.question {
+        width: 90%;
+        padding: 10px;
+      }
+      #questions {
+        margin: 20px 0;
+        padding: 0;
+      }
+      #questions li.question {
+        padding: 10px;
+        margin: 0;
+        list-style-type: none;
+        clear: both;
+        border-top: 1px #ccc dotted;
+      }
+      #questions .question-text {
+        float: left;
+        display: block;
+        width: 70%;
+        overflow-wrap: break-spaces;
+        margin: 10px 0;
+      }
+      #questions .votes {
+        float: left;
+        display: block;
+        width: 50px;
+        margin: 10px 0 0 20px;
+      }
+      #questions .vote-button {
+        border-radius: 4px;
+        background-color: #35cccc;
+        border: none;
+        padding: 10px;
+        color: white;
+      }
+      a, a:visited, a:hover {
+        color: #07b;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Questions and answers</h1>
+    <div class="content">
+      <div id="select-presentation" class="screen">
+        <p>Please select a conference presentation:</p>
+        <select id="presentation-select-box">
+          <option value="--">--</option>
+        </select>
+      </div>
+      <div id="presentation-questions" class="screen hidden">
+        <h2>Presentation: <span id="presentation-name"></span></h2>
+        <h3>Speakers: <span id="presentation-speakers"></span></h3>
+
+        <a href="/" id="presentation-questions-exit">Go back</a>
+
+        <p>Ask question:</p>
+        <form id="ask-question-form">
+          <input type="text" name="question" class="question">
+        </form>
+
+        <ul id="questions">
+        </ul>
+
+      </div>
+    </div>
+
+  </body>
+</html>

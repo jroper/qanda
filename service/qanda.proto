@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+import "cloudstate/entity_key.proto";
+import "google/api/annotations.proto";
+
+package cloudstate.samples.qanda;
+
+// Request to ask a question.
+message AskRequest {
+
+    // The presentation this question is being asked at.
+    string presentation = 1 [(.cloudstate.entity_key) = true];
+
+    // The question to ask.
+    // This may be a new question, or an existing question, if an existing question,
+    // it will result in the number of votes for the question being incremented.
+    string question = 2;
+}
+
+// Request to watch questions for a presentation.
+message WatchRequest {
+
+    // The presentation to watch questions for.
+    string presentation = 1 [(.cloudstate.entity_key) = true];
+}
+
+// The questions for a presentation.
+message Questions {
+
+    // A map of questions to number of people that have voted for the question.
+    map<string, int32> questions = 1;
+}
+
+message Empty {
+}
+
+// Conference presentation question and answer entity.
+service Qanda {
+
+    // Ask a question
+    rpc Ask(AskRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/api/qanda/{presentation}"
+            body: "*"
+        };
+    }
+
+    // Watch the questions for a presentation.
+    // This will initially return all the questions, and then each subsequent
+    // message will contain any new questions and existing questions that
+    // have increased votes.
+    rpc Watch(WatchRequest) returns (stream Questions) {
+        option (google.api.http) = {
+            get: "/api/qanda/{presentation}"
+        };
+    }
+}
