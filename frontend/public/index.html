@@ -87,6 +87,10 @@
             voteButton.innerText = "VOTE";
             voteButton.setAttribute("data-question", questionsList[idx].question);
             voteButton.onclick = function() {
+              voteButton.classList.add("active");
+              window.setTimeout(function() {
+                voteButton.classList.remove("active");
+              }, 500);
               vote(presentationId, voteButton.getAttribute("data-question"));
             };
             li.appendChild(questionSpan);
@@ -226,12 +230,30 @@
         width: 50px;
         margin: 10px 0 0 20px;
       }
-      #questions .vote-button {
+      button {
         border-radius: 4px;
         background-color: #35cccc;
-        border: none;
-        padding: 10px;
+        border: 1px #35cccc solid;
+        padding: 9px;
         color: white;
+      }
+      button:focus {
+        outline: none;
+      }
+      button:hover {
+        border: 1px #104444 solid;
+      }
+      @keyframes flash {
+        0%  {
+          background-color: white;
+        }
+        100% {
+          background-color: #35cccc;
+        }
+      }
+      button.active {
+        animation-name: flash;
+        animation-duration: 0.5s;
       }
       a, a:visited, a:hover {
         color: #07b;
