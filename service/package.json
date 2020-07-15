@@ -29,8 +29,8 @@
     "prestart": "compile-descriptor qanda.proto",
     "start": "node qanda.js",
     "start-no-prestart": "node qanda.js",
-    "dockerbuild": "docker build -t ${DOCKER_PUBLISH_TO:-jamesroper}/cloudstate-qanda:latest .",
-    "dockerpush": "docker push ${DOCKER_PUBLISH_TO:-jamesroper}/cloudstate-qanda:latest",
+    "dockerbuild": "docker build -t ${DOCKER_PUBLISH_TO:-asia.gcr.io/stateserv}/cloudstate-qanda:latest .",
+    "dockerpush": "docker push ${DOCKER_PUBLISH_TO:-asia.gcr.io/stateserv}/cloudstate-qanda:latest",
     "dockerbuildpush": "npm run dockerbuild && npm run dockerpush"
   }
 }

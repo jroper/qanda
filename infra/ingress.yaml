@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: qanda
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - csqanda.app
+    - www.csqanda.app
+    secretName: csaqanda-tls
+  rules:
+  - host: csqanda.app
+    http:
+      paths:
+      - path: /api/qanda
+        pathType: Prefix
+        backend:
+          serviceName: qanda
+          servicePort: 80
+      - backend:
+          serviceName: qanda-frontend
+          servicePort: 80
+

@@ -1,0 +1,7 @@
+apiVersion: cloudstate.io/v1alpha1
+kind: StatefulService
+metadata:
+  name: qanda
+spec:
+  containers:
+  - image: asia.gcr.io/stateserv/cloudstate-qanda:latest
