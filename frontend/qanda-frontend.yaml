@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: asia.gcr.io/stateserv/qanda-frontend
+        image: asia.gcr.io/stateserv/qanda-frontend:3
         ports:
         - containerPort: 8080
 ---
